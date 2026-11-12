@@ -57,7 +57,13 @@
         header { top: max(0.75rem, env(safe-area-inset-top)) !important; left: max(0.75rem, env(safe-area-inset-left)) !important; right: max(0.75rem, env(safe-area-inset-right)) !important; }
         #info-modal { padding-bottom: max(1.25rem, env(safe-area-inset-bottom)); }
         #modal-body { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
-        .filter-btn { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .filter-btn { height: 2.5rem; border: 1px solid rgba(255, 255, 255, 0.08); }
+        /* Filter bar: swipe sideways only, scrollbar hidden */
+        .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+        .no-scrollbar::-webkit-scrollbar { display: none; width: 0; height: 0; }
+        #filters-panel .filter-btn { flex: 0 0 auto; padding: 0 0.875rem; font-size: 0.875rem; line-height: 1; white-space: nowrap; }
+        #filters-panel .filter-btn:first-child { margin-left: auto; }
+        #filters-panel .filter-btn:last-child { margin-right: auto; }
         .sheet-handle { touch-action: none; }
         /* Desktop & tablet (>=768px): detail panel slides in from the left, no dimmed/blurred backdrop, map stays interactive */
         @media (min-width: 768px) {
@@ -70,13 +76,13 @@
         }
         /* Phone: bottom sheet pops up from the bottom with a slight spring */
         @media (max-width: 767px) {
-            #info-modal { transition: transform .45s cubic-bezier(.22, 1.15, .36, 1); }
+            #info-modal { transition: transform .45s cubic-bezier(.22, 1.15, .36, 1), height .3s ease; height: 46dvh; max-height: 90dvh !important; }
+            #info-modal:not(.is-expanded) #modal-body { overflow-y: hidden; }
             #info-modal-backdrop { background: transparent !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; pointer-events: none !important; }
             #info-modal { pointer-events: none; }
             #info-modal.is-open { pointer-events: auto; }
         }
         @media (pointer: coarse) {
-            .filter-btn { min-height: 44px; padding-left: 1rem; padding-right: 1rem; }
             #close-modal-btn { width: 44px; height: 44px; }
             #view-mode-btn, #toggle-search-btn { min-height: 44px; }
             #search-input { font-size: 16px; min-height: 44px; }
@@ -93,33 +99,32 @@
     <header class="absolute top-3 left-3 right-3 md:top-4 md:left-6 md:right-6 z-20 flex flex-wrap lg:flex-nowrap items-center gap-2 pointer-events-none">
         <div class="contents">
             <!-- Title Card -->
-            <div class="glass-panel px-3.5 py-2.5 rounded-2xl flex items-center space-x-2.5 pointer-events-auto shadow-2xl shrink-0 flex-1 md:flex-none order-1">
+            <div class="glass-panel px-3.5 py-2.5 rounded-2xl flex items-center space-x-2.5 pointer-events-auto shadow-2xl shrink-0 basis-full md:basis-auto order-1">
                 <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white text-lg shadow-md shrink-0">
                     <i class="fa-solid fa-map"></i>
                 </div>
                 <div class="min-w-0">
                     <h1 class="font-bold text-base md:text-lg leading-tight tracking-wide text-white truncate">展區地圖</h1>
-                    <p class="text-[10px] md:text-xs text-slate-300 truncate md:hidden xl:block">3D/2D 模式可切換 • 點擊檢視詳情</p>
                 </div>
             </div>
 
             <!-- Mode Switcher & Search Toggle -->
-            <div class="flex items-center space-x-2 pointer-events-auto order-2 md:order-4 shrink-0">
+            <div class="flex items-center space-x-2 pointer-events-auto order-3 md:order-5 lg:order-4 shrink-0">
                 <!-- 2D / 3D Switcher Button -->
-                <button id="view-mode-btn" class="glass-panel px-3 py-2 rounded-2xl text-xs font-semibold text-blue-400 hover:text-white hover:bg-blue-600 transition shadow-xl flex items-center space-x-1.5 active:scale-95">
+                <button id="view-mode-btn" class="glass-panel px-3 h-12 rounded-2xl text-xs font-semibold text-blue-400 hover:text-white hover:bg-blue-600 transition shadow-xl flex items-center space-x-1.5 active:scale-95">
                     <i class="fa-solid fa-layer-group text-sm" id="view-mode-icon"></i>
                     <span id="view-mode-text">切換 2D</span>
                 </button>
 
                 <!-- Search Toggle Button (Mobile) -->
-                <button id="toggle-search-btn" class="glass-panel p-2.5 rounded-2xl text-slate-200 shadow-xl active:scale-95 transition flex items-center justify-center w-10 h-10 shrink-0 md:hidden">
+                <button id="toggle-search-btn" class="glass-panel p-2.5 rounded-2xl text-slate-200 shadow-xl active:scale-95 transition flex items-center justify-center w-12 h-12 shrink-0 md:hidden">
                     <i class="fa-solid fa-magnifying-glass text-base"></i>
                 </button>
             </div>
         </div>
 
         <!-- Search (own panel; phone: opened by the magnifier button) -->
-        <div id="controls-panel" class="py-1 items-center pointer-events-auto hidden md:flex order-3 md:order-2 w-full md:w-auto md:flex-1 min-w-0">
+        <div id="controls-panel" class="py-1 items-center pointer-events-auto hidden md:flex order-4 md:order-2 w-full md:w-auto md:flex-1 min-w-0">
             <div class="relative flex-1 min-w-[120px]">
                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                 <input id="search-input" type="text" placeholder="搜尋攤位 1-22、表演、電影..."
@@ -129,14 +134,16 @@
             </div>
         </div>
 
+        <div class="hidden md:block lg:hidden basis-full h-0 order-3"></div>
+
         <!-- Category filters (own panel; phone/tablet: row below title/search/switcher, desktop: same row) -->
-        <div id="filters-panel" class="flex justify-center pointer-events-none order-4 md:order-5 lg:order-3 w-full lg:w-auto min-w-0">
-            <div class="flex items-center space-x-1.5 overflow-x-auto no-scrollbar max-w-full pointer-events-auto py-1 px-1">
-                <button class="filter-btn active shrink-0 px-3 py-1.5 text-xs rounded-xl font-medium bg-blue-600 text-white transition active:scale-95" data-category="all">全部</button>
-                <button class="filter-btn shrink-0 px-3 py-1.5 text-xs rounded-xl font-medium bg-slate-800/90 text-slate-300 hover:bg-slate-700 active:scale-95 transition" data-category="market">市集 (1-22)</button>
-                <button class="filter-btn shrink-0 px-3 py-1.5 text-xs rounded-xl font-medium bg-slate-800/90 text-slate-300 hover:bg-slate-700 active:scale-95 transition" data-category="stage">表演</button>
-                <button class="filter-btn shrink-0 px-3 py-1.5 text-xs rounded-xl font-medium bg-slate-800/90 text-slate-300 hover:bg-slate-700 active:scale-95 transition" data-category="movie">電影放映</button>
-                <button class="filter-btn shrink-0 px-3 py-1.5 text-xs rounded-xl font-medium bg-slate-800/90 text-slate-300 hover:bg-slate-700 active:scale-95 transition" data-category="exhibition">展覽與服務</button>
+        <div id="filters-panel" class="flex justify-center pointer-events-none order-2 md:order-4 lg:order-3 flex-1 lg:flex-none min-w-0">
+            <div class="glass-panel rounded-2xl p-1 h-12 shadow-2xl flex items-center gap-1 overflow-x-auto overflow-y-hidden no-scrollbar max-w-full w-full lg:w-auto pointer-events-auto" style="touch-action: pan-x; overscroll-behavior: contain;">
+                <button class="filter-btn active shrink-0 px-3 py-1.5 text-xs rounded-xl font-medium bg-blue-600 text-white transition active:scale-95" data-category="all" title="全部" aria-label="全部">ALL</button>
+                <button class="filter-btn shrink-0 px-3 py-1.5 text-xs rounded-xl font-medium bg-slate-800/90 text-slate-300 hover:bg-slate-700 active:scale-95 transition" data-category="market" title="市集 (1-22)" aria-label="市集 (1-22)">🛍️</button>
+                <button class="filter-btn shrink-0 px-3 py-1.5 text-xs rounded-xl font-medium bg-slate-800/90 text-slate-300 hover:bg-slate-700 active:scale-95 transition" data-category="stage" title="表演" aria-label="表演">🎤</button>
+                <button class="filter-btn shrink-0 px-3 py-1.5 text-xs rounded-xl font-medium bg-slate-800/90 text-slate-300 hover:bg-slate-700 active:scale-95 transition" data-category="movie" title="電影放映" aria-label="電影放映">🎬</button>
+                <button class="filter-btn shrink-0 px-3 py-1.5 text-xs rounded-xl font-medium bg-slate-800/90 text-slate-300 hover:bg-slate-700 active:scale-95 transition" data-category="exhibition" title="展覽與服務" aria-label="展覽與服務">💁🏻🖼️</button>
             </div>
         </div>
     </header>
@@ -220,9 +227,8 @@
             title: "電影放映",
             desc: "坐在舒適的大豆袋沙發上，享受星空下的光影盛宴。",
             todayMovies: [
-                { time: "14:00 - 15:30", name: "《尋找奇幻島》", tag: "動畫 / 冒險", duration: "90 min", desc: "一部適合全家觀賞的經典動畫冒險奇幻片。" },
-                { time: "16:00 - 18:00", name: "《聲光紀事紀錄片》", tag: "紀錄片 / 藝術", duration: "120 min", desc: "講述現代數位藝術與音樂融合演變的深度紀錄片。" },
-                { time: "19:00 - 21:15", name: "《星際漫遊者》", tag: "科幻 / 驚悚", duration: "135 min", desc: "夜間晚場鋸獻，帶領觀眾探索浩瀚宇宙的奇幻之旅。" }
+                { time: "3/19 18:30 ~ 20:30", name: "美國女孩", tag: "", duration: "", desc: "" },
+                { time: "3/20 18:30 ~ 20:30", name: "琳達！琳達！", tag: "", duration: "", desc: "" }
             ]
         };
 
@@ -230,19 +236,17 @@
             title: "表演",
             desc: "現場音樂演奏、舞蹈表演與互動交流重鎮。",
             schedule: [
-                { time: "13:30 - 14:15", performer: "聲動樂團", event: "不插電木吉他民謠演唱" },
-                { time: "15:00 - 15:45", performer: "爵士獵人 Quintet", event: "午後爵士跨界隨想" },
-                { time: "16:30 - 17:15", performer: "極光舞團", event: "當代街舞與現代舞表演" },
-                { time: "18:00 - 19:00", performer: "DJ Wave", event: "夕陽電子音樂派對" },
-                { time: "19:30 - 20:30", performer: "展覽開幕式壓軸樂團", event: "搖滾狂歡之夜" }
+                { time: "3/19 17:10 ~ 17:30", performer: "", event: "表演演出" },
+                { time: "3/19 17:30 ~ 17:50", performer: "", event: "表演演出" },
+                { time: "3/20 16:00 ~ 17:30", performer: "", event: "表演演出" }
             ]
         };
 
         const ZONE_DATA = {
-            "concept_left_a": { name: "概念展覽 A區", cat: "概念展區 - 左帳篷 A區", desc: "展示永續設計與未來科技融合的互動裝置，探討未來都市生活新可能。" },
-            "concept_left_b": { name: "概念展覽 B區", cat: "概念展區 - 左帳篷 B區", desc: "循環經濟材料應用展，展示創新再生材質於日常產品的永續設計實驗。" },
-            "concept_right_a": { name: "概念展覽 A區", cat: "概念展區 - 右帳篷 A區", desc: "數位沉浸式藝術展，透過光影與感測器打造人機共生的視覺體驗。" },
-            "concept_right_b": { name: "概念展覽 B區", cat: "概念展區 - 右帳篷 B區", desc: "生成式 AI 與聲光互動裝置，讓觀者體驗即時演算的音像對話。" },
+            "concept_left_a": { name: "展區:傍", cat: "概念展區 - 左帳篷", desc: "展區比較像是找尋自己的定位，背負著理想與期待透過人與人之間的拉扯，還在找尋的過程，像是一個問號的開頭。" },
+            "concept_left_b": { name: "展區:佮", cat: "概念展區 - 左帳篷", desc: "這個展區比較像是已經找到結果，知道自己的定位。" },
+            "concept_right_a": { name: "展區:佗", cat: "概念展區 - 右帳篷", desc: "這個展區是結果，已經找到自己的歸屬，理解自己和土地的連結。" },
+            "concept_right_b": { name: "展區:佇", cat: "概念展區 - 右帳篷", desc: "這個展區也是比較偏向提問的部分，開始找尋自己與土地的連結，找尋自己的由來，探索的過程。" },
             "movie_view": { name: "電影觀展", cat: "展覽主題區", desc: "歷年國際電影節得獎作品海報展與微電影體驗區。" },
             "pr": { name: "公關", cat: "行政服務", desc: "媒體接待、貴賓簽到與品牌合作洽談專區。" },
             "service": { name: "服務台", cat: "行政服務", desc: "提供大會地圖手冊、遺失物招領、醫護諮詢與廣播服務。" },
@@ -637,7 +641,7 @@
             const roofMat = new THREE.MeshStandardMaterial({ color: 0x0284c7 });
             const halves = [], hitList = [];
 
-            [['a', -W / 2, '概念 A區'], ['b', W / 2, '概念 B區']].forEach(([k, lx, label]) => {
+            [['a', -W / 2], ['b', W / 2]].forEach(([k, lx]) => {
                 const half = new THREE.Group();
                 half.position.set(lx, 0, 0);
                 half.userData.viewDir = new THREE.Vector3(Math.sin(tent.ry), 0, Math.cos(tent.ry));   // tent front faces the stage
@@ -660,7 +664,7 @@
                 interactiveObjects.push(hitMesh);
                 hitList.push(hitMesh);
                 tentGroup.add(half);
-                halves.push([half, label]);
+                halves.push([half, zoneInfo.name]);
             });
 
             // Centre dividing wall between A and B
@@ -911,7 +915,7 @@
                     </div>
                 `;
             } else if (data.type === 'stage') {
-                catEl.innerText = '表演節目表';
+                catEl.innerText = '表演時間表';
                 iconEl.innerHTML = `<i class="fa-solid fa-music"></i>`;
                 let scheduleHTML = data.data.schedule.map(item => `
                     <div class="flex items-center justify-between p-3 bg-slate-800/60 rounded-xl border border-slate-700/50">
@@ -919,24 +923,24 @@
                             <span class="text-[11px] text-purple-400 font-mono font-semibold block">${item.time}</span>
                             <h5 class="text-xs md:text-sm font-bold text-white mt-0.5">${item.event}</h5>
                         </div>
-                        <span class="text-[10px] md:text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded-lg border border-purple-500/30 shrink-0 ml-2">${item.performer}</span>
+                        ${item.performer ? `<span class="text-[10px] md:text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded-lg border border-purple-500/30 shrink-0 ml-2">${item.performer}</span>` : ''}
                     </div>
                 `).join('');
 
                 bodyEl.innerHTML = `<p class="text-xs text-slate-300 mb-2">${data.data.desc}</p><div class="space-y-2">${scheduleHTML}</div>`;
             } else if (data.type === 'movie') {
-                catEl.innerText = '電影放映節目';
+                catEl.innerText = '電影放映時間表';
                 iconEl.innerHTML = `<i class="fa-solid fa-film"></i>`;
                 let moviesHTML = data.data.todayMovies.map(m => `
                     <div class="p-3 bg-slate-800/60 rounded-2xl border border-slate-700/60 space-y-1.5">
                         <div class="flex justify-between items-start">
                             <div>
-                                <span class="text-[11px] text-blue-400 font-mono font-semibold">${m.time} (${m.duration})</span>
+                                <span class="text-[11px] text-blue-400 font-mono font-semibold">${m.time}${m.duration ? ` (${m.duration})` : ''}</span>
                                 <h4 class="text-xs md:text-sm font-bold text-white mt-0.5">${m.name}</h4>
                             </div>
-                            <span class="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded border border-blue-500/30 shrink-0 ml-2">${m.tag}</span>
+                            ${m.tag ? `<span class="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded border border-blue-500/30 shrink-0 ml-2">${m.tag}</span>` : ''}
                         </div>
-                        <p class="text-[11px] text-slate-300 leading-relaxed">${m.desc}</p>
+                        ${m.desc ? `<p class="text-[11px] text-slate-300 leading-relaxed">${m.desc}</p>` : ''}
                     </div>
                 `).join('');
 
@@ -951,6 +955,10 @@
                 `;
             }
 
+            sheetExpanded = false;
+            modal.classList.remove('is-expanded');
+            modal.style.height = '';
+            document.getElementById('modal-body').scrollTop = 0;
             backdrop.classList.remove('opacity-0', 'pointer-events-none');
             modal.classList.add('is-open');
             setPanelShift(true);
@@ -959,12 +967,32 @@
         }
 
 // Shift the 3D view (right on desktop/tablet, up on phone) so the focused object isn't hidden behind the panel/sheet
+        let sheetExpanded = false;
+        function sheetHeights() {
+            const H = window.innerHeight, sheet = document.getElementById('info-modal'), body = document.getElementById('modal-body');
+            const collapsed = H * 0.46;
+            const needed = sheet.offsetHeight + (body.scrollHeight - body.clientHeight) + 4;   // height that shows all content
+            return { collapsed, expanded: Math.max(collapsed, Math.min(needed, H * 0.85)) };
+        }
+        function setSheetExpanded(on) {
+            const sheet = document.getElementById('info-modal'), { collapsed, expanded } = sheetHeights();
+            sheetExpanded = on && expanded > collapsed + 6;
+            sheet.classList.toggle('is-expanded', sheetExpanded);
+            sheet.style.height = sheetExpanded ? expanded + 'px' : '';
+            setPanelShift(true, sheetExpanded ? expanded : collapsed);
+        }
         const viewShift = { v: 0, y: 0 };
-        function setPanelShift(open) {
+        function setPanelShift(open, sheetH) {
             const wide = window.matchMedia('(min-width: 768px)').matches;
-            const sheetH = Math.min(document.getElementById('info-modal').offsetHeight, window.innerHeight * 0.8);
+            let shiftY = 0;
+            if (open && !wide) {   // centre of the map area between the header and the top of the sheet
+                const H = window.innerHeight;
+                const top = document.querySelector('header').getBoundingClientRect().bottom;
+                const bottom = H - (sheetH || document.getElementById('info-modal').offsetHeight);
+                shiftY = H / 2 - (top + bottom) / 2;
+            }
             new TWEEN.Tween(viewShift)
-                .to({ v: open && wide ? Math.min(384, window.innerWidth - 32) / 2 + 8 : 0, y: open && !wide ? sheetH / 2 : 0 }, 600)
+                .to({ v: open && wide ? Math.min(384, window.innerWidth - 32) / 2 + 8 : 0, y: shiftY }, 600)
                 .easing(TWEEN.Easing.Cubic.Out).start();
         }
 
@@ -989,8 +1017,8 @@
         function entrySearchText(ud) {
             const d = ud.data || {};
             if (ud.type === 'market') return norm([ud.title, d.name, d.owner, d.category, d.items, '攤位' + ud.id].join(' '));
-            if (ud.type === 'stage') return norm([ud.title, d.desc, ...d.schedule.map(s => s.performer + s.event)].join(' '));
-            if (ud.type === 'movie') return norm([ud.title, d.desc, ...d.todayMovies.map(m => m.name + m.tag)].join(' '));
+            if (ud.type === 'stage') return norm([ud.title, d.desc, ...d.schedule.map(s => (s.performer || '') + s.event + s.time)].join(' '));
+            if (ud.type === 'movie') return norm([ud.title, d.desc, ...d.todayMovies.map(m => m.name + (m.tag || '') + m.time)].join(' '));
             return norm([ud.title, ud.title.replace('展覽', ''), d.name, d.cat, d.desc].join(' '));
         }
 
@@ -1095,18 +1123,34 @@
             initSearchFilter();
             document.getElementById('view-mode-btn').addEventListener('click', toggle2D3DView);
             document.getElementById('close-modal-btn').addEventListener('click', closeModal);
-            const sheet = document.getElementById('info-modal'), handle = document.getElementById('sheet-handle');
-            let sheetY = null;
-            handle.addEventListener('touchstart', (e) => { sheetY = e.touches[0].clientY; sheet.style.transition = 'none'; }, { passive: true });
-            handle.addEventListener('touchmove', (e) => {
-                if (sheetY !== null) sheet.style.transform = `translateY(${Math.max(0, e.touches[0].clientY - sheetY)}px)`;
+            // Phone bottom sheet: swipe up = expand to show everything, swipe down = collapse, swipe down again = close
+            const sheet = document.getElementById('info-modal'), sheetBody = document.getElementById('modal-body');
+            let g = null;
+            sheet.addEventListener('touchstart', (e) => {
+                if (window.innerWidth >= 768 || e.touches.length !== 1) { g = null; return; }
+                const inBody = !!e.target.closest('#modal-body');
+                if (sheetExpanded && inBody && sheetBody.scrollTop > 0) { g = null; return; }   // let the body scroll
+                g = { y: e.touches[0].clientY, h0: sheet.offsetHeight, downOnly: sheetExpanded && inBody, ...sheetHeights() };
+                sheet.style.transition = 'none';
             }, { passive: true });
-            handle.addEventListener('touchend', (e) => {
-                if (sheetY === null) return;
-                const dy = e.changedTouches[0].clientY - sheetY;
-                sheetY = null; sheet.style.transition = ''; sheet.style.transform = '';
-                if (dy > 80) closeModal();
+            sheet.addEventListener('touchmove', (e) => {
+                if (!g) return;
+                const dy = e.touches[0].clientY - g.y;
+                if (dy > 0) sheet.style.transform = `translateY(${dy}px)`;
+                else if (!g.downOnly && !sheetExpanded) sheet.style.height = Math.min(g.expanded, g.h0 - dy) + 'px';
             }, { passive: true });
+            const endSheetDrag = (e) => {
+                if (!g) return;
+                const dy = (e.changedTouches ? e.changedTouches[0].clientY : g.y) - g.y, d = g;
+                g = null;
+                sheet.style.transition = ''; sheet.style.transform = '';
+                if (dy < -50 && !d.downOnly) setSheetExpanded(true);
+                else if (dy > 220) closeModal();
+                else if (dy > 70) { if (sheetExpanded) setSheetExpanded(false); else closeModal(); }
+                else setSheetExpanded(sheetExpanded);
+            };
+            sheet.addEventListener('touchend', endSheetDrag, { passive: true });
+            sheet.addEventListener('touchcancel', endSheetDrag, { passive: true });
             document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
             document.getElementById('info-modal-backdrop').addEventListener('click', (e) => {
                 if (e.target.id === 'info-modal-backdrop') closeModal();
@@ -1174,7 +1218,7 @@
         function animate() {
             requestAnimationFrame(animate);
             TWEEN.update();
-            if (viewShift.v > 0.5 || viewShift.y > 0.5) camera.setViewOffset(window.innerWidth, window.innerHeight, -viewShift.v, viewShift.y, window.innerWidth, window.innerHeight);
+            if (Math.abs(viewShift.v) > 0.5 || Math.abs(viewShift.y) > 0.5) camera.setViewOffset(window.innerWidth, window.innerHeight, -viewShift.v, viewShift.y, window.innerWidth, window.innerHeight);
             else if (camera.view && camera.view.enabled) camera.clearViewOffset();
             controls.update();
             const tg = controls.target, cx = THREE.MathUtils.clamp(tg.x, -26, 26), cz = THREE.MathUtils.clamp(tg.z, -20, 20);
